@@ -19,7 +19,8 @@ function [model] = vehicleModel(opt,x,u)
 %% References:
     % 
 
-%% Check input arguments
+%% Pick a model...
+% Check input arguments
 if nargin <= 2
     x = ones(40,1);
     u = ones(10,1);
@@ -30,6 +31,7 @@ end
             model = robotModel2Wheels(x,u);
         otherwise
             % insert fail safe or error code?
+            % https://youtu.be/unv3GQidxEs
     end
    
 %% end of function
