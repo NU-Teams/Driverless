@@ -23,7 +23,6 @@ function [model] = robotModel2Wheels(x,u)
       % model is used as an example to verify SLAM implementation. 
 
 
-% Pull params for models
 % Setup System parameters
 J  = 15;      % [kg.m^2]    - Robot Moment of Inertia (Initial Guess)
 m  = 20;      % [kg]        - Robot mass
@@ -35,11 +34,11 @@ br = 10;      % [N.m.s/rad] - damping coefficient for rotational motion
 
 
 % Model
-model   =      [(x(4,:).*sin(x(3,:)));
-                (x(4,:).*cos(x(3,:)));
-                (x(5,:));
-                ((u(1,:) + u(2,:) - bu*x(4,:) - m*l*x(5,:).^2))/m;
-                (((m*l*x(4,:) - br).*x(5,:) - a*u(2,:) + a*u(1,:)))/(J+m*l^2)];
+model   =      [(x(4).*sin(x(3)));
+                (x(4).*cos(x(3)));
+                (x(5));
+                ((u(1) + u(2) - bu*x(4) - m*l*x(5).^2))/m;
+                (((m*l*x(4) - br).*x(5) - a*u(2) + a*u(1)))/(J+m*l^2)];
 
 %% end of function 
 end
