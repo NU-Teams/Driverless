@@ -1,4 +1,4 @@
-function [mu, Sigma, s] = EKF_SLAM(s, mu, Sigma, u, z)
+function [mu, Sigma] = EKF_SLAM(s, mu, Sigma, u, z)
 %% Description:
     % EKF SLAM Algorithm, predicts and filters state means & covariances.
 %% Inputs:
@@ -18,7 +18,7 @@ alpha = 0.1.*[0.9 0.2 0.3 0.4]; % robot-dependent motion noise parameters
 
 % Pull number of landmarks, only returning it in structure for plotting
 % reasons
-nLandmarks = length(mu((s.nx+1):end))/2;
+s.nLandmarks = length(mu((s.nx+1):end))/2;
 % Measurment Covariance
 sigma_range = 5;
 sigma_bearing = 3;
@@ -28,21 +28,19 @@ Qt = [sigma_range^2, 0;
 %       0, 0.1];
 %% Prediction Update:
     % Fx: Projection Matrix for State Update
-    Fx = [eye(s.nx),zeros(s.nx,s.ny*nLandmarks)];
+    Fx = [eye(s.nx),zeros(s.nx,s.ny*s.nLandmarks)];
     
     % G: Jacobian of process model wrt states, V: Jacobian of process model wrt inputs
-    [g, V] = Jacobian(s,mu(1:s.nx),u); 
-    V = s.Delta.*V;
-    G = eye(s.ny*nLandmarks+s.nx) + Fx'*(s.Delta.*g)*Fx;
-    
+    [G, V] = Jacobian(s,mu,u,Fx); 
+        
     % Define R & M?? KRAMER
     M = [(alpha(1)*abs(u(1)) + alpha(2)*abs(u(2)))^2, 0;
           0, (alpha(3)*abs(u(1)) + alpha(4)*abs(u(2)))^2];
     R = V*M*V';
     
     % Mean & Covariance Prediction
-    mub = mu + Fx'*(s.Delta.*vehicleModel(s,mu(1:s.nx),u));
-    Sigmab = G+Sigma*G' + Fx'*R*Fx;
+    mub = STM(s,mu,u,Fx);
+    Sigmab = G*Sigma*G' + Fx'*R*Fx;
     
 %% Measurement Update:
     % for each observed landmark
@@ -53,14 +51,14 @@ Qt = [sigma_range^2, 0;
             l_idx = 0;
             
             % Initialise Matrices for each landmark
-            predZ   = zeros(s.ny,nLandmarks+1);
-            predPsi = zeros(s.ny,s.ny,nLandmarks+1);
-            predH = zeros(s.ny,s.ny*(nLandmarks+1)+s.nx,nLandmarks+1);
-            e = zeros(s.ny,nLandmarks+1);
+            predZ   = zeros(s.ny,s.nLandmarks+1);
+            predPsi = zeros(s.ny,s.ny,s.nLandmarks+1);
+            predH = zeros(s.ny,s.ny*(s.nLandmarks+1)+s.nx,s.nLandmarks+1);
+            e = zeros(s.ny,s.nLandmarks+1);
             
             %  ============================== 
             if s.mahalanobis
-                pi_m = zeros(1,nLandmarks+1); 
+                pi_m = zeros(1,s.nLandmarks+1); 
             else % Euclidean
                 pi_e = 10*s.min_radius*ones(2,1);
             end
@@ -79,19 +77,19 @@ Qt = [sigma_range^2, 0;
             end
             
             % Compare current measurement to existing landmarks
-            for j = 1:nLandmarks + 1
+            for j = 1:s.nLandmarks + 1
                 % Predicted measurement to landmark
                 [predZ(:,j),e(:,j),h] = rangeBearingModel(z(:,i), mu_temp(1:s.nx), mu_temp((s.ny*j+s.nx-1):(s.ny*j+s.nx)));
                 % Projection Matrix for State & Landmark
-                Fxj = [eye(s.nx),zeros(s.nx,s.ny*j-s.ny),zeros(s.nx,s.ny),zeros(s.nx,s.ny*(nLandmarks+1)-s.ny*j);
-                       zeros(s.ny,s.nx),zeros(s.ny,s.ny*j-s.ny),eye(s.ny),zeros(s.ny,s.ny*(nLandmarks+1)-s.ny*j)];
+                Fxj = [eye(s.nx),zeros(s.nx,s.ny*j-s.ny),zeros(s.nx,s.ny),zeros(s.nx,s.ny*(s.nLandmarks+1)-s.ny*j);
+                       zeros(s.ny,s.nx),zeros(s.ny,s.ny*j-s.ny),eye(s.ny),zeros(s.ny,s.ny*(s.nLandmarks+1)-s.ny*j)];
                 % Projection Jacobian & Covariance update for current landmark
                 predH(:,:,j) = h*Fxj;
                 predPsi(:,:,j) = predH(:,:,j)*Sigma_temp*predH(:,:,j)' + Qt;
                 
                 % ============================== 
                 if s.mahalanobis                    
-                    if j <= nLandmarks
+                    if j <= s.nLandmarks
                         pi_m(j) = e(:,j)'*(predPsi(:,:,j)\e(:,j)); else
                         pi_m(j) = 0.02; % min mahalanobis distance to add landmark to map
                     end
@@ -103,7 +101,7 @@ Qt = [sigma_range^2, 0;
                     end                    
                 else % Euclidean
                     ed = euclideanDistance(s,mu_temp, z(:,i), j);
-                    if j < nLandmarks
+                    if j < s.nLandmarks
                         if ed < pi_e(1)
                             % Track the best 2 associations
                             pi_e(2) = pi_e(1);
@@ -123,20 +121,20 @@ Qt = [sigma_range^2, 0;
             if s.mahalanobis
                 if (min_pi(2)/min_pi(1)) > 1.5
                     % Is it a new landmark?
-                    if l_idx > nLandmarks
+                    if l_idx > s.nLandmarks
                         % Then add a landmark
-                        nLandmarks = nLandmarks + 1;
+                        s.nLandmarks = s.nLandmarks + 1;
                         % Update mean/covariance
                         mub = mu_temp;
                         Sigmab = Sigma_temp;
                     else
                         % Truncate H and pull best association
-                        Hit = predH(:,1:nLandmarks*s.ny+s.nx,l_idx);
+                        Hit = predH(:,1:s.nLandmarks*s.ny+s.nx,l_idx);
                         % Compute the kalman Gain
                         Kit = Sigmab*Hit'/predPsi(:,:,l_idx);
                         % Update mean/covariance
                         mub = mub + Kit*(e(:,l_idx));
-                        Sigmab = (eye(s.nx+s.ny*nLandmarks)-Kit*Hit)*Sigmab;
+                        Sigmab = (eye(s.nx+s.ny*s.nLandmarks)-Kit*Hit)*Sigmab;
                     end
                 end
                 % Collect for debugging??
@@ -144,20 +142,20 @@ Qt = [sigma_range^2, 0;
                 % error_collect(:,l_idx,t) = e(:,l_idx);
                     
             else % Euclidean
-                if l_idx > nLandmarks
+                if l_idx > s.nLandmarks
                     % Add a landmark and expand mean/cov matrices
-                    nLandmarks = nLandmarks + 1;
+                    s.nLandmarks = s.nLandmarks + 1;
                     % Update mean/covariance
                     mub = mu_temp;
                     Sigmab = Sigma_temp;
                 else
                     % Truncate H and pull best association
-                    Hit = predH(:,1:nLandmarks*s.ny+s.nx,l_idx);
+                    Hit = predH(:,1:s.nLandmarks*s.ny+s.nx,l_idx);
                     % Compute the kalman Gain
                     Kit = Sigmab*Hit'/predPsi(:,:,l_idx);
                     % Update mean/covariance
                     mub = mub + Kit*(e(:,l_idx));
-                    Sigmab = (eye(s.nx+s.ny*nLandmarks)-Kit*Hit)*Sigmab;
+                    Sigmab = (eye(s.nx+s.ny*s.nLandmarks)-Kit*Hit)*Sigmab;
                 end
             end
             
@@ -166,6 +164,6 @@ Qt = [sigma_range^2, 0;
     mu = mub;
     Sigma = Sigmab;
     
-    s.nLandmarks = nLandmarks;
+    s.s.nLandmarks = s.nLandmarks;
 %% end of function
 end
