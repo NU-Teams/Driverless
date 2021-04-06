@@ -29,6 +29,10 @@ end
     switch opt.vehicleModel
         case 'robotModel2Wheels'
             model = robotModel2Wheels(x,u);
+        case 'motion_model_velocity'
+            model = motion_model_velocity(x,u);
+        case 'bicycleModel_simple'
+            model = bicycleModel_simple(x,u);
         otherwise
             % insert fail safe or error code?
             % https://youtu.be/unv3GQidxEs
