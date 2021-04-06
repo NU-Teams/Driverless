@@ -37,8 +37,10 @@ elseif (zh(2) > (360-tol)*pi/180 && z(2) < (tol)*pi/180)
 end
 
 % J: Jacobian of measurement model wrt states ()
-J = (1/q).*[-zh(1)*dx, -zh(1)*dy, 0, 0,0;
-                   dy,       -dx, -q,0,0];
+J = (1/q).*[-zh(1)*dx, -zh(1)*dy, 0;
+                   dy,       -dx, -q];
+
+J = [J zeros(size(z,1),size(x,1)-3)];
 % J (updated): Jacobian of measurement model wrt landmarks
 J = [J,-J(1:2,1:2)]; 
 
