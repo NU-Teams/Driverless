@@ -8,9 +8,7 @@ clear all
 clc
 
 addpath('data','functions','models','estimation')
-
 disp('Running EKF SLAM Example: SLAM with unknown correspondence & limited field of view')
-
 
 rng(1)
 %% OPTIONS:
@@ -18,37 +16,30 @@ rng(1)
 SLAM.saveData = false; 
 
 % Include noise to measurements
-SLAM.addNoise = false;
+SLAM.addNoise = true;
 
 % Use Mahalanobis [true] or Euclidean [false]
 SLAM.mahalanobis = false;
-SLAM.min_radius = 3.5; % radius [m]
+SLAM.min_radius = 2; % radius [m]
 
 % Animation options
-SLAM.animate = true;
+SLAM.visualise = false;
+SLAM.animate = false;
 SLAM.saveVideo = false; % animate must also be true
-SLAM.videoFileName = '../videos/EKFSLAM_limitedFOV_euclideanDistance_Noise_DeletingLandmarks1.avi';
+SLAM.videoFileName = 'videos/EKFSLAM_robotModel2Wheels_limitedFOV_euclideanDistance_Noise.avi';
 
-if SLAM.animate
-    % Setup animation
-    figure(2)
-    set(gcf, 'Position',  [1000, 200, 500, 500])
-    colourSelect = [1 0 0 0.05];
-    squareAxis = linspace(0,100,500);
-%     lm = plot(L(:,1),L(:,2),'.','color', [0,0,0,0.2], 'linewidth', 1, 'markersize',4);
-end
 
 %% Load landmarks (simulation) & initial pose
-SLAM.gt.initPose = [20; 30; 0]; % x, y, psi %% move to setup
+SLAM.gt.initPose = [0; 0; 0]; % x, y, psi %% move to setup
 
 %% Declare Models
 % Vehicle Model. 
-    % Examples: [robotModel2Wheels, simpleBicycleModel]
+    % Examples: [robotModel2Wheels, simpleBicycleModel, motion_model_velocity]
 SLAM.vehicleModel = 'robotModel2Wheels';
 
 % Track Option (track xy coordinates) & Data associated w/ track
-SLAM.track = 'trackLoop_test1.mat';
-SLAM.controllerInput = 'data_test1.mat';
+SLAM.track = 'data_robotModel2Wheels_loop1.mat';
+SLAM.controllerInput = 'data_robotModel2Wheels_loop1.mat';
 SLAM.STM = 'forwardEulerMethod';
 
 % Setup Simulation
@@ -60,6 +51,7 @@ Pp = 10.*eye(SLAM.nx+SLAM.ny*SLAM.nLandmarks);
 xf = 0; Pf = 0;
 p = [];
 t = 1;
+
 while SLAM.active
     %% Generate Simulated Data
     % Generate States from [t-1] -> [t]
@@ -70,15 +62,38 @@ while SLAM.active
     end
     % Generate Measurements, ground truth & simulated data
     [zgt, z] = getMeasurements_rangeBearing(x,SLAM.gt.landmarks,SLAM);
-    z = zgt;
-    % Add noise to the input signal
-%     u = SLAM.gt.u(:,t) + 0.01*randn(SLAM.nu,1);
-    u = SLAM.gt.u(:,t);
-
+    if SLAM.addNoise
+        % Add noise to the input signal
+        u = SLAM.gt.u(:,t) + 0.01*randn(SLAM.nu,1);
+    else
+        % Use Ground truth values
+        z = zgt;    
+        u = SLAM.gt.u(:,t);
+    end
     %% SLAM
-%         [muf,Pf,SLAM] = EKF_SLAM(SLAM, muf, Pf, SLAM.obs.u, SLAM.obs.z);
-    [xf,Pf,xp,Pp] = EKF_SLAM_take2(SLAM, xp, Pp, u, z);
+    if t == 1
+        xf = xp;
+        Pf = Pp;
+    else
+        [xf,Pf] = EKF_SLAM(SLAM, xf, Pf, u, z);
+    end
+    
+    if SLAM.animate
+        if t == 1
+            % Setup animation
+            figure(2)
+            set(gcf, 'Position',  [1000, 200, 500, 500])
+            colourSelect = [1 0 0 0.05];
+            squareAxis = linspace(0,100,500);
+        end
+        p = plotMap(xf, Pf, z, t, p, SLAM);        
+        drawnow
+        if SLAM.saveVideo
+            F(t) = getframe(gcf);
+        end
 
+    end 
+    
     %% Store, animate etc
     if SLAM.saveData
         %% Create vectors
@@ -124,23 +139,28 @@ while SLAM.active
         
         % Store 
     end
-    if SLAM.animate
-       p = plotMap(xf, Pf, z, t, p, SLAM);
-%         if t == 1
-%             hhh = plot(x(1),x(2),'k*', 'markersize', 12)
-%         else
-%             set(hhh,'xdata',x(1),'ydata',x(2));
-%         end
-%         drawnow
-        
-    end    
+ 
     % increase timestep for next iteration
     t = t + 1;
     if t > size(SLAM.gt.u,2)
         SLAM.active = false;
     end
 end
+if SLAM.saveVideo
+    writerObj = VideoWriter(SLAM.videoFileName);
+    writerObj.FrameRate = 40; % sets the fps
 
+    % open the video writer
+    open(writerObj);
+
+    % write the frames to the video
+    for t = 1:length(F)
+        % convert the image to a frame
+        frame = F(t);
+        writeVideo(writerObj, frame)
+    end
+    close(writerObj);
+end
 
 %% Overview
 % "Come on and SLAM, if you want to jam" : Space Jame Theme Song
