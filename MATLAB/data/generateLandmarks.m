@@ -3,11 +3,15 @@ function s = generateLandmarks(s)
     % Creates landmarks based on an pre-exising track (passed through a structure)
 %% Inputs:
     % s: Structure containing [list important structure features]
+        % s.track: track data, containing xy co-ordinates of the track.
 %% Outputs:
     % s: Structure updated w/ tracks Landmarks xy position representing
     %    track cones
 %% Notes:
-    % - 
+    % - Maybe split structures into catagories, s for SLAM params, perhaps
+    %   tr for track params etc
+    % - edits to make:
+        % pass in coneDistance, variance, gap.
 %% References:
     %
 
@@ -36,11 +40,10 @@ L = []; % This will dynamically grow
 % Parameters (maybe pass in s structure??)
 coneDistance = 3; % [m] from centreline
 variance = [0.05;0.01]; % [] variance in lengrh and angle (simulates a cone being placed "roughly" in the right spot)
-gap = 10; % distance between sequential cones
+gap = 5; % distance between sequential cones
 dsum = 0;
 dInnerSum = 0;
 dOuterSum = 0;
-
 
 d = 0;
 
@@ -64,10 +67,6 @@ for i = 1:N
        L1 = [x(i) + c*sin(a); y(i) - c*cos(a)];
        L2 = [x(i) - c*sin(a); y(i) + c*cos(a)];
        L = [L,L1,L2];
-
-       % Update intial point
-       x0 = x(i);
-       y0 = y(i);
        
        % Inner/outer constraints
        inner = [x(i) + coneDistance*sin(theta); y(i) - coneDistance*cos(theta)];
@@ -127,7 +126,7 @@ for i = 1:N
                dy = L2(2) - L(2,k+1);
                dL2 = sqrt(dx^2+dy^2);
                
-               if dL1 < gap || dL2 < gap
+               if dL1 < gap*0.75 || dL2 < gap*0.75
                    canPlace = false; 
                end
            end
@@ -136,8 +135,6 @@ for i = 1:N
            end
 
            % Update intial point
-           x0 = x(i);
-           y0 = y(i);
            dsum = 0;
            dInnerSum = 0;
            dOuterSum = 0;
@@ -147,23 +144,27 @@ for i = 1:N
     outer_prev = outer;
 end
 
+% L = zeros(2, 50);
+% L(1,:) = -30 + (30+30)*rand(1, 50);
+% L(2,:) = rand(1, 50)*50;
+
 % Plot the landmarks
-plot(L(1,:),L(2,:),'k.')
-hold on
-plot(x,y,'b-')
-xmin = min(L(1,:));
-xmax = max(L(1,:));
-ymin = min(L(2,:));
-ymax = max(L(2,:));
-xext = sqrt(abs(xmax-xmin)); xmin = xmin-xext; xmax = xmax+xext;
-yext = sqrt(abs(ymax-ymin)); ymin = ymin-yext; ymax = ymax+yext;
-axis([xmin,xmax,ymin,ymax])
-axis equal
-grid on
+% plot(L(1,:),L(2,:),'k.')
+% hold on
+% plot(x,y,'b-')
+% xmin = min(L(1,:));
+% xmax = max(L(1,:));
+% ymin = min(L(2,:));
+% ymax = max(L(2,:));
+% xext = sqrt(abs(xmax-xmin)); xmin = xmin-xext; xmax = xmax+xext;
+% yext = sqrt(abs(ymax-ymin)); ymin = ymin-yext; ymax = ymax+yext;
+% axis([xmin,xmax,ymin,ymax])
+% axis equal
+% grid on
 % squareMin = min([xmin,ymin]);
 % squareMax = max([xmax,ymax]);
 % axis([squareMin,squareMax,squareMin,squareMax]);
-drawnow
+% drawnow
 
 s.gt.landmarks = L';
 
