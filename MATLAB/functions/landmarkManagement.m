@@ -1,9 +1,10 @@
-function [mu,Sigma, lmmv] = landmarkManagement(mu,Sigma,lmmv, s, type)
+function [mu,Sigma] = landmarkManagement(mu,Sigma,slm, s, type)
 %% Description:
     % EKF SLAM Algorithm, predicts and filters state means & covariances.
 %% Inputs:
     % mu: 
     % Sigma
+    % slm: seen landmark (slm)
     % lmmv: landmark management vector (lmmv) (maybe include )
 %% Outputs:
     % s: outputs updated filtered/predicted state mean/covariances w/ 
@@ -38,10 +39,46 @@ function [mu,Sigma, lmmv] = landmarkManagement(mu,Sigma,lmmv, s, type)
 
 % int8 to save time/space (-128 to 127)
 % Need to decide on upper and lower limits
-ul = 120;
+ul = 10;
 switch type
     case 'delete'
         % check lmmv, if over limit, delete landmark
+        % Read/Store binary file into vector
+        mask = true;
+        while mask
+            % Number of landmarks
+            M = length(mu(s.nx+1:end))/2;
+            for o = 1:M % can vectorise this
+                if lmmv(o) > ul
+                    % reduce landmark size for recheck
+                    %M = M - 1; % double check this orr resize in for loop
+                    
+                    % resize vectors/matrix (deleting o)
+                    slm = [...
+                        slm(1:s.nx+s.ny*(o-1));...
+                        slm(s.nx+s.ny*o+1:end)];
+                    lmmv = [...
+                        lmmv(1:s.nx+s.ny*(o-1));...
+                        lmmv(s.nx+s.ny*o+1:end)];
+                    
+                    mu = [...
+                        mu(1:s.nx+s.ny*(o-1));...
+                        mu(s.nx+s.ny*o+1:end)];
+                    Sigma = [...
+                        Sigma(1:s.nx+s.ny*(o-1),1:s.nx+s.ny*(o-1)),...
+                        Sigma(1:s.nx+s.ny*(o-1),s.nx+s.ny*o+1:end);...
+                        Sigma(s.nx+s.ny*o+1:end,1:s.nx+s.ny*(o-1)),...
+                        Sigma(s.nx+s.ny*o+1:end,s.nx+s.ny*o+1:end)];
+                    
+                    break;
+                % Else no more landmarks to be deleted 
+                elseif o == M
+                    mask = false; 
+                end
+            end
+        end
+        % WRITE TO BINARY FILE
+        
     case 'seen'
         % landmark seen
         % to save read/write for EACH landmark, I should create a vector of
@@ -58,8 +95,10 @@ switch type
         % token add. Assess each landmark with sensors field of view.
         % Read/Store binary file into vector
         
-        M = length(mu(s.nx+1:end))/2;
-        for o = 1:M % can vectorise this
+        % Number of landmarks
+        M = length(mu(s.nx+1:end))/2;            
+        
+        for o = 1:M % can I vectorise this
             % Convert landmark mean to range bearing
             dx = mu(s.nx+s.ny*o-1) - mu(1);
             dy = mu(nx+ny*o) - mu(2);
@@ -73,9 +112,6 @@ switch type
                 % Add a counter
                 lmmv(o) = lmmv(o) + 2;
                 % Sets upper limit (prevents going inf aka too large)
-                if lmmv(o) > ul
-                    lmmv(o) = ul;
-                end
             end
         end
         % write the binary file
