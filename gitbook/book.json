@@ -1,0 +1,7 @@
+{
+  "plugins": ["numbered-headings"]
+}
+H1:before, H2:before, H3:before, H4:before, H5:before {
+  color: #aaa;
+  width: 40px;
+}
