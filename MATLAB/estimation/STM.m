@@ -1,4 +1,4 @@
-function [stm] = STM(opt,x,u)
+function [stm] = STM(opt,x,u,TrM)
 %% Description:
     % State Transition Model, using specified options (method/model),
     % STM returns estimated states at [t+1]
@@ -28,10 +28,14 @@ if nargin <= 2
     x = ones(40,1);
     u = ones(10,1);
 end
+if nargin <= 3
+    TrM = eye(size(x,1));
+end
+
 
 switch opt.STM
     case 'forwardEulerMethod'
-        stm = forwardEulerMethod(opt,x,u);
+        stm = forwardEulerMethod(opt,x,u,TrM);
     case 'rk4'
 %         stm = rk4(opt,x,u); % TODO
         stm = x; % muahahaha

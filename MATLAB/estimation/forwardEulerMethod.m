@@ -1,4 +1,4 @@
-function [fEM] = forwardEulerMethod(opt,x,u)
+function [fEM] = forwardEulerMethod(opt,x,u,TrM)
 %% Description:
     % State Transition Model, using specified options (method/model),
     % STM returns estimated states at [t+1]
@@ -20,5 +20,12 @@ function [fEM] = forwardEulerMethod(opt,x,u)
 %% References:
     % fix up ^^
 
+if nargin <= 3
+    TrM = eye(size(x,1));
+end
+
 model = vehicleModel(opt,x,u);
-fEM = x + opt.Delta.*model;
+fEM = x + TrM'*(opt.Delta.*model);
+
+%% end of funciton
+end
