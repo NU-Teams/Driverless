@@ -16,8 +16,8 @@ if isempty(h)
     hasbehavior(h3, 'legend', false);
 
 %     set(h1,'linewidth',1);
-    set(h2,'linewidth',1,'color','m');
-    set(h3,'linewidth',1,'color','m');
+    set(h2,'linewidth',2,'color','g');
+    set(h3,'linewidth',2,'color','g');
 %     h.h1 = h1;
     h.h2 = h2;
     h.h3 = h3;
