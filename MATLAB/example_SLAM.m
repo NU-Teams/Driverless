@@ -13,7 +13,7 @@ disp('Running EKF SLAM Example: SLAM with unknown correspondence & limited field
 rng(1)
 %% OPTIONS:
  % Save data for analysis / debugging
-SLAM.saveData = false; 
+SLAM.saveData = false;
 
 % Include noise to measurements
 SLAM.addNoise = true;
@@ -24,10 +24,21 @@ SLAM.min_radius = 2; % radius [m]
 
 % Animation options
 SLAM.visualise = false;
-SLAM.animate = false;
-SLAM.saveVideo = false; % animate must also be true
-SLAM.videoFileName = 'videos/EKFSLAM_robotModel2Wheels_limitedFOV_euclideanDistance_Noise.avi';
+SLAM.animate = true;
+SLAM.saveVideo = true; % animate must also be true
+SLAM.videoFileName = 'videos/EKFSLAM_robotModel2Wheels_deletingLandmarks_euclideanDistance_Noise.avi';
 
+% Delete options
+SLAM.delete = true;
+SLAM.fileName = 'data/lmmv.bin';
+
+try
+    file = fopen(SLAM.fileName, 'w');
+    lmmv = fwrite(file,[],'int8');
+    fclose(file);
+catch
+    disp('no binary file');
+end
 
 %% Load landmarks (simulation) & initial pose
 SLAM.gt.initPose = [0; 0; 0]; % x, y, psi %% move to setup
@@ -75,7 +86,9 @@ while SLAM.active
         xf = xp;
         Pf = Pp;
     else
+        tic
         [xf,Pf] = EKF_SLAM(SLAM, xf, Pf, u, z);
+        toc
     end
     
     if SLAM.animate

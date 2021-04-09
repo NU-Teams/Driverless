@@ -17,7 +17,6 @@ function [mu,Sigma] = landmarkManagement(mu,Sigma,slm, s, type)
     %
 
 %% Lets try to manage...
-
 % Psuedo code
 % switch case, add / remove
 % each iteration, we add a point to each landmark
@@ -39,27 +38,47 @@ function [mu,Sigma] = landmarkManagement(mu,Sigma,slm, s, type)
 
 % int8 to save time/space (-128 to 127)
 % Need to decide on upper and lower limits
-ul = 10;
+
+% Read binary file
+try
+    file = fopen(s.fileName, 'r');
+    lmmv = fread(file,'int8');
+    fclose(file);
+catch
+    lmmv = [];
+end
+
+ul = 50;
+ll = -10;
 switch type
     case 'delete'
         % check lmmv, if over limit, delete landmark
-        % Read/Store binary file into vector
+        
+        % Check lmmv size (if new lm's are seen)
+        adj = (length(slm) - length(lmmv));
+        if adj > 0
+            lmmv = [lmmv; zeros(adj,1)];
+        end
+        % Update lmmv
+        lmmv = lmmv + 3.*slm;
+        lmmv(lmmv(:)>ul) = ul;
+        % Delete Landmark
         mask = true;
         while mask
             % Number of landmarks
             M = length(mu(s.nx+1:end))/2;
             for o = 1:M % can vectorise this
-                if lmmv(o) > ul
+                if lmmv(o) < ll
                     % reduce landmark size for recheck
                     %M = M - 1; % double check this orr resize in for loop
-                    
+                    disp('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> landmark deleted')
                     % resize vectors/matrix (deleting o)
                     slm = [...
-                        slm(1:s.nx+s.ny*(o-1));...
-                        slm(s.nx+s.ny*o+1:end)];
+                        slm(1:(o-1));...
+                        slm(o+1:end)];
                     lmmv = [...
-                        lmmv(1:s.nx+s.ny*(o-1));...
-                        lmmv(s.nx+s.ny*o+1:end)];
+                        lmmv(1:(o-1));...
+                        lmmv(o+1:end)];
                     
                     mu = [...
                         mu(1:s.nx+s.ny*(o-1));...
@@ -78,7 +97,9 @@ switch type
             end
         end
         % WRITE TO BINARY FILE
-        
+        file = fopen(s.fileName,'w');
+        fwrite(file, lmmv,'int8');
+        fclose(file);
     case 'seen'
         % landmark seen
         % to save read/write for EACH landmark, I should create a vector of
@@ -101,24 +122,24 @@ switch type
         for o = 1:M % can I vectorise this
             % Convert landmark mean to range bearing
             dx = mu(s.nx+s.ny*o-1) - mu(1);
-            dy = mu(nx+ny*o) - mu(2);
+            dy = mu(s.nx+s.ny*o) - mu(2);
             q = dx^2 + dy^2;
             % Psuedo range/bearing model for landmark
             ztemp = [sqrt(q);
                      wrapTo2Pi(atan2(dx,dy) - mu(3))];
             
             % Is landmark expected to be seen?
-            if (ztemp(1) <= maxRange) && (ztemp(2) >= (360-maxbearing/2)*pi/180 || ztemp(2) <= (maxbearing/2)*pi/180)
+            if (ztemp(1) <= s.par_rb.maxRange) && (ztemp(2) >= (360-s.par_rb.angle/2)*pi/180 || ztemp(2) <= (s.par_rb.angle/2)*pi/180)
                 % Add a counter
-                lmmv(o) = lmmv(o) + 2;
-                % Sets upper limit (prevents going inf aka too large)
+                lmmv(o) = lmmv(o) - 2;
             end
         end
         % write the binary file
-        
+        file = fopen(s.fileName,'w');
+        fwrite(file, lmmv,'int8');
+        fclose(file);
     otherwise
         % uh oh, shouldn't get here
 end
-        
 %% end of function
 end
