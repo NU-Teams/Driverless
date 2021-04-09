@@ -24,6 +24,11 @@ sigma_range = 5;
 sigma_bearing = 3;
 Qt = [sigma_range^2, 0;
       0, sigma_bearing^2];
+
+% Seen landmarks empty vector
+if s.delete
+    landmark_sighted = zeros(s.nLandmarks,1);
+end
 % Qt = [10, 0;
 %       0, 0.1];
 %% Prediction Update:
@@ -43,6 +48,11 @@ Qt = [sigma_range^2, 0;
     Sigmab = G*Sigma*G' + Fx'*R*Fx;
     
 %% Measurement Update:
+    % Landmark management
+    if s.delete
+        [mub, Sigmab] = landmarkManagement(mub,Sigmab, 0, s, 'expected');
+    end
+    
     % for each observed landmark
     num_obs_landmarks = size(z,2);
     if num_obs_landmarks > 0
@@ -127,6 +137,10 @@ Qt = [sigma_range^2, 0;
                         % Update mean/covariance
                         mub = mu_temp;
                         Sigmab = Sigma_temp;
+                        % Increase the vector size
+                        if s.delete
+                            landmark_sighted = [landmark_sighted; 0];
+                        end
                     else
                         % Truncate H and pull best association
                         Hit = predH(:,1:s.nLandmarks*s.ny+s.nx,l_idx);
@@ -135,6 +149,10 @@ Qt = [sigma_range^2, 0;
                         % Update mean/covariance
                         mub = mub + Kit*(e(:,l_idx));
                         Sigmab = (eye(s.nx+s.ny*s.nLandmarks)-Kit*Hit)*Sigmab;
+                        % Mark landmark seen
+                        if s.delete
+                            landmark_sighted(l_idx) = 1;
+                        end
                     end
                 end
                 % Collect for debugging??
@@ -148,6 +166,10 @@ Qt = [sigma_range^2, 0;
                     % Update mean/covariance
                     mub = mu_temp;
                     Sigmab = Sigma_temp;
+                    % Increase the vector size
+                    if s.delete
+                        landmark_sighted = [landmark_sighted; 0];
+                    end
                 else
                     % Truncate H and pull best association
                     Hit = predH(:,1:s.nLandmarks*s.ny+s.nx,l_idx);
@@ -156,6 +178,10 @@ Qt = [sigma_range^2, 0;
                     % Update mean/covariance
                     mub = mub + Kit*(e(:,l_idx));
                     Sigmab = (eye(s.nx+s.ny*s.nLandmarks)-Kit*Hit)*Sigmab;
+                    % Mark landmark seen
+                    if s.delete
+                        landmark_sighted(l_idx) = 1;
+                    end
                 end
             end
             
@@ -163,7 +189,9 @@ Qt = [sigma_range^2, 0;
     end
     mu = mub;
     Sigma = Sigmab;
-    
-    s.s.nLandmarks = s.nLandmarks;
+    % Manage Landmarks
+    if s.delete
+        [mu,Sigma] = landmarkManagement(mu,Sigma,landmark_sighted, s, 'delete');
+    end
 %% end of function
 end
