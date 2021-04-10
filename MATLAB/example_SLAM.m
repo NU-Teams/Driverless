@@ -7,10 +7,10 @@ close all
 clear all
 clc
 
-addpath('data','functions','models','estimation')
-disp('Running EKF SLAM Example: SLAM with unknown correspondence & limited field of view')
+addpath('data','functions','models','estimation');
+disp('Running EKF SLAM Example: SLAM with unknown correspondence & limited field of view');
 
-rng(1)
+% rng(1)
 %% OPTIONS:
  % Save data for analysis / debugging
 SLAM.saveData = false;
@@ -19,14 +19,14 @@ SLAM.saveData = false;
 SLAM.addNoise = true;
 
 % Use Mahalanobis [true] or Euclidean [false]
-SLAM.mahalanobis = false;
+SLAM.mahalanobis = true;
 SLAM.min_radius = 2; % radius [m]
 
 % Animation options
 SLAM.visualise = false;
 SLAM.animate = true;
 SLAM.saveVideo = true; % animate must also be true
-SLAM.videoFileName = 'videos/EKFSLAM_robotModel2Wheels_deletingLandmarks_euclideanDistance_Noise.avi';
+SLAM.videoFileName = 'videos/EKFSLAM_robotModel2Wheels_LandmarkManagement_euclideanDistance1m_Noise.avi';
 
 % Delete options
 SLAM.delete = true;
@@ -92,15 +92,7 @@ while SLAM.active
     end
     
     if SLAM.animate
-        if t == 1
-            % Setup animation
-            figure(2)
-            set(gcf, 'Position',  [1000, 200, 500, 500])
-            colourSelect = [1 0 0 0.05];
-            squareAxis = linspace(0,100,500);
-        end
-        p = plotMap(xf, Pf, z, t, p, SLAM);        
-        drawnow
+        [p, SLAM] = plotMap(xf, Pf, z, t, p, SLAM);        
         if SLAM.saveVideo
             F(t) = getframe(gcf);
         end
@@ -161,7 +153,7 @@ while SLAM.active
 end
 if SLAM.saveVideo
     writerObj = VideoWriter(SLAM.videoFileName);
-    writerObj.FrameRate = 40; % sets the fps
+    writerObj.FrameRate = 20; % sets the fps
 
     % open the video writer
     open(writerObj);

@@ -48,8 +48,8 @@ catch
     lmmv = [];
 end
 
-ul = 50;
-ll = -10;
+ul = 100;
+ll = -20;
 switch type
     case 'delete'
         % check lmmv, if over limit, delete landmark
@@ -60,7 +60,7 @@ switch type
             lmmv = [lmmv; zeros(adj,1)];
         end
         % Update lmmv
-        lmmv = lmmv + 3.*slm;
+        lmmv = lmmv + 5.*slm;
         lmmv(lmmv(:)>ul) = ul;
         % Delete Landmark
         mask = true;
@@ -71,7 +71,7 @@ switch type
                 if lmmv(o) < ll
                     % reduce landmark size for recheck
                     %M = M - 1; % double check this orr resize in for loop
-                    disp('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> landmark deleted')
+%                     disp('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> landmark deleted')
                     % resize vectors/matrix (deleting o)
                     slm = [...
                         slm(1:(o-1));...
@@ -131,7 +131,7 @@ switch type
             % Is landmark expected to be seen?
             if (ztemp(1) <= s.par_rb.maxRange) && (ztemp(2) >= (360-s.par_rb.angle/2)*pi/180 || ztemp(2) <= (s.par_rb.angle/2)*pi/180)
                 % Add a counter
-                lmmv(o) = lmmv(o) - 2;
+                lmmv(o) = lmmv(o) - 4;
             end
         end
         % write the binary file

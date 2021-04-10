@@ -19,9 +19,12 @@ alpha = 0.1.*[0.9 0.2 0.3 0.4]; % robot-dependent motion noise parameters
 % Pull number of landmarks, only returning it in structure for plotting
 % reasons
 s.nLandmarks = length(mu((s.nx+1):end))/2;
+
 % Measurment Covariance
-sigma_range = 5;
-sigma_bearing = 3;
+% sigma_range = 2; % Works great without noise
+% sigma_bearing = 8;
+sigma_range = 1;
+sigma_bearing = 1;
 Qt = [sigma_range^2, 0;
       0, sigma_bearing^2];
 
@@ -69,6 +72,7 @@ end
             %  ============================== 
             if s.mahalanobis
                 pi_m = zeros(1,s.nLandmarks+1); 
+                min_pi = 100*ones(2,1);
             else % Euclidean
                 pi_e = 10*s.min_radius*ones(2,1);
             end
@@ -83,8 +87,11 @@ end
             % Initialise covariance for new landmark for new landmark
             % proportional to the range measurment squared (ie more certain on closer measurements)
             for ii = (size(Sigma_temp,1)-1):(size(Sigma_temp,1))
-                 Sigma_temp(ii,ii) = z(1,i)^2/120;%(z(1,i)^1/2);%120;
+                 Sigma_temp(ii,ii) = z(1,i)^2/(0.5*length(z)^2);%(z(1,i)^1/2);%120;
             end
+%             Qt(1,1) = z(1,i)^2/(0.2*length(z));
+%             Qt(2,2) = sigma_bearing^2/(length(z));
+            
             
             % Compare current measurement to existing landmarks
             for j = 1:s.nLandmarks + 1
@@ -101,13 +108,15 @@ end
                 if s.mahalanobis                    
                     if j <= s.nLandmarks
                         pi_m(j) = e(:,j)'*(predPsi(:,:,j)\e(:,j)); else
-                        pi_m(j) = 0.02; % min mahalanobis distance to add landmark to map
+                        pi_m(j) = 0.05; % min mahalanobis distance to add landmark to map
                     end
                     % Track best 2 associationa:
                     if pi_m(j) < min_pi(1)
                         min_pi(2) = min_pi(1);
                         min_pi(1) = pi_m(j);
                         l_idx = j;
+                    elseif pi_m(j) < min_pi(2)
+                        min_pi(2) = pi_m(j);
                     end                    
                 else % Euclidean
                     ed = euclideanDistance(s,mu_temp, z(:,i), j);
@@ -129,9 +138,9 @@ end
             end
             % Find the best association
             if s.mahalanobis
-                if (min_pi(2)/min_pi(1)) > 1.5
+                if (min_pi(2)/min_pi(1)) > 2.1
                     % Is it a new landmark?
-                    if l_idx > s.nLandmarks
+                    if l_idx > s.nLandmarks  || landmark_sighted(l_idx)
                         % Then add a landmark
                         s.nLandmarks = s.nLandmarks + 1;
                         % Update mean/covariance
@@ -139,7 +148,7 @@ end
                         Sigmab = Sigma_temp;
                         % Increase the vector size
                         if s.delete
-                            landmark_sighted = [landmark_sighted; 0];
+                            landmark_sighted = [landmark_sighted; 1];
                         end
                     else
                         % Truncate H and pull best association
@@ -154,13 +163,16 @@ end
                             landmark_sighted(l_idx) = 1;
                         end
                     end
+                else
+%                     disp('ignored')
+%                     disp((min_pi(2)/min_pi(1)))
                 end
                 % Collect for debugging??
                 % zh(:,l_idx,t) = predZ(:,l_idx);
                 % error_collect(:,l_idx,t) = e(:,l_idx);
                     
             else % Euclidean
-                if l_idx > s.nLandmarks
+                if l_idx > s.nLandmarks || landmark_sighted(l_idx)
                     % Add a landmark and expand mean/cov matrices
                     s.nLandmarks = s.nLandmarks + 1;
                     % Update mean/covariance
@@ -168,7 +180,7 @@ end
                     Sigmab = Sigma_temp;
                     % Increase the vector size
                     if s.delete
-                        landmark_sighted = [landmark_sighted; 0];
+                        landmark_sighted = [landmark_sighted; 1];
                     end
                 else
                     % Truncate H and pull best association

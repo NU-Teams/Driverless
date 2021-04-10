@@ -1,15 +1,19 @@
-function p = plotMap(muf,Pf,z,k,p,s)
+function [p, s] = plotMap(muf,Pf,z,k,p,s)
 colourSelect = [0 0 1 0.1];
-hold on
 nLandmarks = length(muf((s.nx+1):end))/2;
 gtLandmarks = size(s.gt.landmarks,1);
 L = zeros(s.ny,nLandmarks);
     if k == 1
+
+        % Setup animation
+        figure(2)
+        set(gcf, 'Position',  [10, 200, 600, 600])
+        hold on
         % Plot animated trajectory
 %         p.tr = plot(x(1,1:k),x(2,1:k), '-','color', [0,0,0,0.2],'linewidth',2);
 %         p.trh = plot(muf(1,1:k),muf(2,1:k), 'c-','linewidth',1);
 
-        p.lm = plot(s.gt.landmarks(:,1),s.gt.landmarks(:,2),'ko');
+        p.lm = plot(s.gt.landmarks(:,1),s.gt.landmarks(:,2),'o','MarkerSize',4,'color',[0 0 0 0.2]);
         hasbehavior(p.lm, 'legend', true);
         
         % Plot animated measurements
@@ -54,7 +58,7 @@ L = zeros(s.ny,nLandmarks);
         p.rhc = line(xx,yy,'linestyle','-','color','r');
         hasbehavior(p.rhc, 'legend', false);
     else
-        
+        hold on
 
         % Plot trajectory
 %         set(p.tr,'xdata',x(1,1:k),'ydata',x(2,1:k));
@@ -94,6 +98,16 @@ L = zeros(s.ny,nLandmarks);
             end
 
         end
+        if j < size(p.xm,1)
+            % Remove data from plot
+            for jj = 1:(size(p.xm,1)-j)
+                set(p.xm(j+jj,1),'xdata',NaN,'ydata',NaN);
+                set(p.Pc(j+jj,1),'xdata',muf(1).*ones(1,17),'ydata',muf(2).*ones(1,17));
+            end
+            % resize the vector
+            p.xm = p.xm(1:j,1);
+            p.Pc = p.Pc(1:j,1);
+        end
 
     end
 
@@ -114,11 +128,19 @@ L = zeros(s.ny,nLandmarks);
     ymax = max([L(2,:),muf(2)]);
     xext = sqrt(abs(xmax-xmin)); xmin = xmin-xext; xmax = xmax+xext;
     yext = sqrt(abs(ymax-ymin)); ymin = ymin-yext; ymax = ymax+yext;
-    if (xmin == xmax) || (ymin == ymax)
-        axis([-5,5,-5,5])
-    else
-        axis([xmin,xmax,ymin,ymax])
+    if xmin < s.plot.xmin
+        s.plot.xmin = xmin;
     end
+    if xmax > s.plot.xmax
+        s.plot.xmax = xmax;
+    end
+    if ymin < s.plot.ymin
+        s.plot.ymin = ymin;
+    end
+    if ymax > s.plot.ymax
+        s.plot.ymax = ymax;
+    end
+    axis([s.plot.xmin,s.plot.xmax,s.plot.ymin,s.plot.ymax])
     axis equal
     grid on
     drawnow

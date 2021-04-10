@@ -25,7 +25,7 @@ br = 10;      % [N.m.s/rad] - damping coefficient for rotational motion
 jx = s.Delta.*[0, 0, x(4).*cos(x(3)), sin(x(3)), 0;
                0, 0, -x(4).*sin(x(3)), cos(x(3)), 0;
                0, 0, 0, 0, 1;
-               0, 0, 0, bu/m, -2*l*x(5);
+               0, 0, 0, -bu/m, -2*l*x(5);
                0, 0, 0, m*l*x(5)/(J + m*l^2), (m*l*x(4) - br)/(J + m*l^2)];
 % Jacobian of the STM
 Jx = eye(s.ny*s.nLandmarks+s.nx) + TrM'*jx*TrM;

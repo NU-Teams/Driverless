@@ -62,12 +62,18 @@ end
 opt.Pp = 0.1.*eye(opt.nx + opt.ny*opt.nLandmarks);
 
 % parameters for range/bearing model
-opt.par_rb.maxRange = 15;
+opt.par_rb.maxRange = 30;
 opt.par_rb.angle = 240;
 
 % Noise amplitude
 opt.par_rb.noise_range = 0.1;
 opt.par_rb.noise_angle = 0.01;
+
+% Plotting size options
+opt.plot.xmin = -5;
+opt.plot.xmax = 5;
+opt.plot.ymin = -5;
+opt.plot.ymax = 5;
 
 %% end of function
 end
