@@ -1,0 +1,19 @@
+@startuml
+
+start
+partition Setup {
+	:Initialise peripherals;
+	:Delay?;
+	:Save pot value and move
+	steering to pot angle slowly;
+	:Delay?;
+}
+partition Loop {
+	:Smart delay;
+	:Read magenetic encoder;
+	:Print data to computer;
+	:Make control action;
+	:Set motor;
+}
+stop
+@enduml
