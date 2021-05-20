@@ -9,6 +9,7 @@ partition Setup {
 	:Delay?;
 }
 partition Loop {
+	repeat
 	:Smart delay;
 	:Read magenetic encoder;
 	:Print data to computer;

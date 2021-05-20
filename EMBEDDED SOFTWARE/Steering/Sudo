@@ -1,0 +1,24 @@
+************************************************
+Sudo code for the driverless actuators
+************************************************
+
+Startup (power on from driver input)
+Setup peripherals
+
+Main loop
+    Measurements
+        Steering angle - magnetic encoder
+        RPM - wheel encoders (or motor controllers)
+        Accelerations - IMU
+        Brake position - Brake pot
+        Pedal position - Accel pot
+    Filter
+        Steering angle
+            Measure 100 values (or so) and average. Read new value and remove last
+            Measure PWM duty cycle
+        RPM & Accelerations
+            Kalman filter?
+            
+    Control
+    Actuate/Ouput
+

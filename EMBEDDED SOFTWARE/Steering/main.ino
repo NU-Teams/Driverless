@@ -1,3 +1,10 @@
+/* TODO:
+ * - Read battery voltage and have safe limits
+ * - Implement software hard limits
+ * - Set limits on change in PWM signal from magnetic encoder
+ */
+
+
 #include "button.h"
 #include "sensors.h"
 #include "motor.h"
@@ -11,7 +18,6 @@
 #define delay_millis 10
 
 unsigned long prev_millis = 0;
-int start = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -36,11 +42,6 @@ void setup() {
 
 // Main loop
 void loop() {
-    if (start) {
-        start = 1;
-        delay(1000);
-    }
-
     // If delay is met, execute control action
     if (millis() - prev_millis > delay_millis) {
         // Continually update control action
