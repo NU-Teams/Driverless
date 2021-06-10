@@ -1,6 +1,7 @@
 function s = generateLandmarks(s)
 %% Description:
     % Creates landmarks based on an pre-exising track (passed through a structure)
+    % Creates Vector of landmark x,y coordinates and associated colour
 %% Inputs:
     % s: Structure containing [list important structure features]
         % s.track: track data, containing xy co-ordinates of the track.
@@ -12,9 +13,14 @@ function s = generateLandmarks(s)
     %   tr for track params etc
     % - edits to make:
         % pass in coneDistance, variance, gap.
+    
+    % 0 = blue
+    % 1 = yellow
+    % 2 = Orange (large)
+    % 3 = Orange (small)
 %% References:
     %
-
+    
 %% Run run run
 % load track data
 try
@@ -38,9 +44,9 @@ N = length(x);
 L = []; % This will dynamically grow
 
 % Parameters (maybe pass in s structure??)
-coneDistance = 3; % [m] from centreline
-variance = [0.05;0.01]; % [] variance in lengrh and angle (simulates a cone being placed "roughly" in the right spot)
-gap = 5; % distance between sequential cones
+coneDistance = 7; % [m] from centreline
+variance = [0.5;0.05]; % [] variance in lengrh and angle (simulates a cone being placed "roughly" in the right spot)
+gap = 8; % distance between sequential cones
 dsum = 0;
 dInnerSum = 0;
 dOuterSum = 0;
@@ -64,8 +70,9 @@ for i = 1:N
        c = coneDistance + variance(1)*randn;
        a = theta + variance(2)*randn;
        
-       L1 = [x(i) + c*sin(a); y(i) - c*cos(a)];
-       L2 = [x(i) - c*sin(a); y(i) + c*cos(a)];
+       
+       L1 = [x(i) + c*sin(a); y(i) - c*cos(a); 2]; % left or outer
+       L2 = [x(i) - c*sin(a); y(i) + c*cos(a); 2]; % right or inner
        L = [L,L1,L2];
        
        % Inner/outer constraints
@@ -109,8 +116,8 @@ for i = 1:N
            a = theta + variance(2)*randn;
            
            % Landmark candidates
-           L1 = [x(i) + c*sin(a); y(i) - c*cos(a)];
-           L2 = [x(i) - c*sin(a); y(i) + c*cos(a)];
+           L1 = [x(i) + c*sin(a); y(i) - c*cos(a); 1]; % right or inner 
+           L2 = [x(i) - c*sin(a); y(i) + c*cos(a); 0]; % left or outer
            
            % I want logic that checks for existing cones (exclude the last set)
            % This is incase gps data has overlap data, ie a 2nd lap
@@ -148,23 +155,35 @@ end
 % L(1,:) = -30 + (30+30)*rand(1, 50);
 % L(2,:) = rand(1, 50)*50;
 
+
+
 % Plot the landmarks
-% plot(L(1,:),L(2,:),'k.')
-% hold on
-% plot(x,y,'b-')
-% xmin = min(L(1,:));
-% xmax = max(L(1,:));
-% ymin = min(L(2,:));
-% ymax = max(L(2,:));
-% xext = sqrt(abs(xmax-xmin)); xmin = xmin-xext; xmax = xmax+xext;
-% yext = sqrt(abs(ymax-ymin)); ymin = ymin-yext; ymax = ymax+yext;
-% axis([xmin,xmax,ymin,ymax])
-% axis equal
-% grid on
-% squareMin = min([xmin,ymin]);
-% squareMax = max([xmax,ymax]);
-% axis([squareMin,squareMax,squareMin,squareMax]);
-% drawnow
+plt_idx = L(:,L(3,:) == 0);
+plot(plt_idx(1,:),plt_idx(2,:),'b.')
+
+hold on
+plt_idx = L(:,L(3,:) == 1);
+plot(plt_idx(1,:),plt_idx(2,:),'y.')
+
+plt_idx = L(:,L(3,:) == 2);
+plot(plt_idx(1,:),plt_idx(2,:),'color',[ 0.9100 0.4100 0.1700], 'marker', '.', 'MarkerSize', 18)
+
+% Plot the trajectory
+plot(x,y,'c-')
+xmin = min(L(1,:));
+xmax = max(L(1,:));
+ymin = min(L(2,:));
+ymax = max(L(2,:));
+xext = sqrt(abs(xmax-xmin)); xmin = xmin-xext; xmax = xmax+xext;
+yext = sqrt(abs(ymax-ymin)); ymin = ymin-yext; ymax = ymax+yext;
+axis([xmin,xmax,ymin,ymax])
+axis equal
+grid on
+squareMin = min([xmin,ymin]);
+squareMax = max([xmax,ymax]);
+axis([squareMin,squareMax,squareMin,squareMax]);
+set(gca,'color',[0,0,0,0.2]) % Background colour
+drawnow
 
 s.gt.landmarks = L';
 

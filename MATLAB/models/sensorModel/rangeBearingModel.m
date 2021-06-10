@@ -18,7 +18,7 @@ function [zh,e,J] = rangeBearingModel(z, x, L)
     %
 
 %% Lets see what I reckon
-tol = 45;
+tol = 30;
 
 dx = L(1) - x(1);
 dy = L(2) - x(2);

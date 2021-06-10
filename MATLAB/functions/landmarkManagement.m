@@ -64,9 +64,15 @@ switch type
         lmmv(lmmv(:)>ul) = ul;
         % Delete Landmark
         mask = true;
+        if isempty(lmmv)
+            mask = false;
+        end
         while mask
             % Number of landmarks
             M = length(mu(s.nx+1:end))/2;
+            if M == 0
+                mask = false;
+            end
             for o = 1:M % can vectorise this
                 if lmmv(o) < ll
                     % reduce landmark size for recheck
@@ -124,6 +130,7 @@ switch type
             dx = mu(s.nx+s.ny*o-1) - mu(1);
             dy = mu(s.nx+s.ny*o) - mu(2);
             q = dx^2 + dy^2;
+            
             % Psuedo range/bearing model for landmark
             ztemp = [sqrt(q);
                      wrapTo2Pi(atan2(dx,dy) - mu(3))];

@@ -36,6 +36,24 @@ switch opt.vehicleModel
             otherwise
                 % 
         end
+    case 'simpleBicycleModel'
+       switch opt.STM
+            case 'forwardEulerMethod'
+                [J, V] = bicycleModel_Jacobian(opt, x, u, TrM);
+            case 'rk4'
+                % TBD
+            otherwise
+                % 
+       end
+    case 'ackermanModel'
+       switch opt.STM
+            case 'forwardEulerMethod'
+                [J, V] = ackermannModel_Jacobian(opt, x, u, TrM);
+            case 'rk4'
+                % TBD
+            otherwise
+                % 
+        end
     otherwise
         % insert fail safe or error code?
         % https://youtu.be/unv3GQidxEs

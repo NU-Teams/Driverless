@@ -36,3 +36,6 @@ Ju = s.Delta.*[0, 0;
                0, 0;
                1/m, 1/m;
                a/(J+m*l^2), -a/(J+m*l^2)];
+
+%% end of function       
+end

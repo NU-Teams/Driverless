@@ -1,4 +1,4 @@
-function [model] = vehicleModel(opt,x,u)
+function data = getSavedDataset(ds)
 %% Description:
     % Returns selected Process Model
 %% Inputs:
@@ -19,27 +19,12 @@ function [model] = vehicleModel(opt,x,u)
 %% References:
     % 
 
-%% Pick a model...
-% Check input arguments
-if nargin <= 2
-    x = ones(40,1);
-    u = ones(10,1);
-end
-
+%%
 %% Select Model
-switch opt.vehicleModel
-    case 'robotModel2Wheels'
-        model = robotModel2Wheels(x,u);
-    case 'motion_model_velocity'
-        model = motion_model_velocity(x,u);
-    case 'simpleBicycleModel'
-        model = bicycleModel(x,u);
-    case 'ackermanModel'
-        model = ackermannModel(x,u);
-    otherwise
-        % insert fail safe or error code?
-        % https://youtu.be/unv3GQidxEs
-end
-   
-%% end of function
-end
+    switch ds
+        case 'victoriaPark'
+            data = collectData();
+        otherwise
+            % insert fail safe or error code?
+            % https://youtu.be/unv3GQidxEs
+    end
