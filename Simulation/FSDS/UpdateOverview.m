@@ -1,0 +1,19 @@
+function [] = UpdateOverview(plots,sensor)
+
+plots.LidarPlot.XData = sensor.lidar.pointcloud(:,1);
+plots.LidarPlot.YData = sensor.lidar.pointcloud(:,2);
+plots.LidarPlot.ZData = sensor.lidar.pointcloud(:,3);
+
+plots.CameraPlot.CData=sensor.camera.image;
+
+plots.SensorAnno.String = {'IMU Time stamp: ' + string(sensor.imu.time_stamp),...
+    'IMU Orientation: ['+string(sensor.imu.orientation.x)+' '+ string(sensor.imu.orientation.y)+' '+string(sensor.imu.orientation.z)+']',...
+    'IMU Linear Accel: ['+ string(sensor.imu.linear_acceleration.x)+' '+string(sensor.imu.linear_acceleration.y)+' '+string(sensor.imu.linear_acceleration.z)+']',...
+    'GPS Time stamp: ['+ string(sensor.gps.time_stamp)+' '+ string(sensor.gps.time_utc)+']',...
+    'GPS Geo lat/long/alt: ['+ string(sensor.gps.geo_point.latitude)+' '+ string(sensor.gps.geo_point.longitude)+' '+string(sensor.gps.geo_point.altitude)+']',...
+    'GPS std of pos error: ['+ string(sensor.gps.eph)+' '+string(sensor.gps.epv)+']',...
+    'GPS Velocity: ['+ string(sensor.gps.velocity.x)+' '+string(sensor.gps.velocity.y)+' '+ string(sensor.gps.velocity.z)+']'};
+
+drawnow
+end
+
